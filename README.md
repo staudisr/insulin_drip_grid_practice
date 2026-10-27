@@ -1,1 +1,0 @@
-# insulin_drip_grid_practice
