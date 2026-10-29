@@ -3,61 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Insulin Drip Calculator</title>
-    
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <title>Insulin Drip Protocol Trainer</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; margin: auto; background-color: #f8f9fa; }
+        
+        #main-menu { text-align: center; margin-top: 50px; }
+        .menu-btn { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; width: 220px; }
+        .btn-easy { background-color: #28a745; }
+        .btn-easy:hover { background-color: #218838; }
+        .btn-medium { background-color: #ffc107; color: #212529; }
+        .btn-medium:hover { background-color: #e0a800; }
+        .btn-hard { background-color: #dc3545; }
+        .btn-hard:hover { background-color: #c82333; }
+        
+        /* Impossible Button Styling */
+        .btn-impossible { background-color: #000; color: #dc3545; border: 2px solid #dc3545; }
+        .btn-impossible:hover { background-color: #222; box-shadow: 0 0 10px #dc3545; }
+
+        #app-interface { display: none; }
+        .scenario-box { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #0056b3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .table-container { width: 100%; overflow-x: auto; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { border-collapse: collapse; min-width: 1400px; font-size: 13px; }
+        th, td { border: 1px solid #999; padding: 6px; text-align: center; vertical-align: middle; }
+        th { background: #0056b3; color: white; position: sticky; top: 0; }
+        .instructions { background: #e9ecef; text-align: left; padding: 12px; font-size: 13px; font-weight: bold; width: 220px; line-height: 1.4; }
+        
+        .bg-row { background: #dee2e6; font-weight: bold; width: 100px; }
+        .cell-btn { width: 100%; height: 100%; padding: 8px 4px; font-size: 14px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 3px; transition: 0.1s; }
+        
+        tbody tr:nth-child(even) .bg-row { background: #ced4da; }
+        tbody tr:nth-child(even) .cell-btn { background: #e9ecef; border-color: #bbb; }
+        
+        .cell-btn:hover { background: #d0e1f9; }
+        .correct { background: #28a745 !important; color: white; border-color: #1e7e34; font-weight: bold; }
+        .incorrect { background: #dc3545 !important; color: white; border-color: #bd2130; font-weight: bold; }
+        .pending { background: #ffc107 !important; color: black; font-weight: bold; border-color: #e0a800; } /* For multi-clicks */
+
+        .previous-cell { 
+            background: #d1ecf1 !important; 
+            border: 2px solid #17a2b8 !important; 
+            color: #0c5460; 
+            font-weight: bold; 
+        }
+        
+        .feedback { min-height: 20px; font-weight: bold; margin-top: 15px; padding: 15px; border-radius: 5px; display: none; }
+        .feedback.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+        .feedback.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+        
+        #next-btn, #menu-btn { display: none; margin-top: 15px; padding: 10px 20px; font-size: 16px; background: #0056b3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #next-btn:hover, #menu-btn:hover { background: #004494; }
+        .btn-death { background: #dc3545 !important; }
+        .btn-death:hover { background: #c82333 !important; }
+    </style>
 </head>
 <body>
 
-    <div id="header-box">
-        <h2>Neuro ICU Insulin Drip Calculator</h2>
-        <p class="disclaimer">WARNING: This tool is intended for educational training and competency validation only. It is not integrated with the EHR and should not replace independent clinical judgment or official hospital charting tools.</p>
+    <div id="main-menu">
+        <h2>Neuro ICU Insulin Drip Trainer</h2>
+        <p>Select a difficulty level to begin:</p>
+        <button class="menu-btn btn-easy" onclick="startQuiz('easy')">Easy (Basic Starts)</button><br>
+        <button class="menu-btn btn-medium" onclick="startQuiz('medium')">Medium (Shifts)</button><br>
+        <button class="menu-btn btn-hard" onclick="startQuiz('hard')">Hard (Hypoglycemia)</button><br>
+        <button class="menu-btn btn-impossible" onclick="startQuiz('impossible')">IMPOSSIBLE (100 Hours)</button>
     </div>
 
-    <div class="calculator-panel">
-        <div>
-            <div class="input-group">
-                1. Selected Current Rate: <span id="display-current" style="color: #0056b3;">None (Click the grid below)</span>
-            </div>
-            <div class="input-group">
-                2. Enter New FSBS (mg/dL): <input type="number" id="new-fsbs" placeholder="e.g. 155" disabled>
-            </div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn-calc" onclick="calculateNewRate()" id="calc-btn" disabled>Calculate Rate Adjustment</button>
-            <button class="btn-new-start" onclick="calculateNewStart()" id="start-btn" disabled>Calculate NEW Infusion Start</button>
-            <button class="btn-reset" onclick="resetCalculator()">Reset Grid</button>
-        </div>
+    <div id="app-interface">
+        <h2 id="difficulty-title">Non-Surgical Critical Care Insulin Drip</h2>
         
-        <div id="result-box">
-            <span id="result-text"></span>
-            <!-- Timer container hidden by default -->
-            <div id="timer-container" style="display: none; margin-top: 15px; text-align: center;">
-                <button class="btn-timer" id="start-timer-btn" onclick="startHypoTimer()">Start 30 Min Recheck Timer</button>
-                <div id="timer-display" style="font-size: 32px; font-weight: bold; margin-top: 10px; display: none;">30:00</div>
-                <button class="btn-stop-alarm" id="stop-alarm-btn" onclick="stopAlarm()" style="display: none;">Stop Alarm</button>
-            </div>
+        <div class="scenario-box">
+            <h3 id="question-text">Loading scenario...</h3>
+            <p id="progress-tracker" style="font-size: 12px; color: #555; margin-top: 5px; font-weight: bold;"></p>
         </div>
+
+        <div class="table-container" id="grid-container">
+            <table id="drip-table">
+                <thead>
+                    <tr id="table-headers">
+                        <th>DIRECTIONS</th>
+                        <th>Blood Glucose ROW (mg/dl)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="feedback-box" class="feedback"></div>
+        <button id="next-btn" onclick="nextQuestion()">Next Hour</button>
+        <button id="menu-btn" onclick="returnToMenu()">Return to Main Menu</button>
     </div>
 
-    <!-- Hidden audio element for the timer alarm -->
-    <audio id="alarm-sound" loop>
-        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
-    </audio>
-
-    <div class="table-container">
-        <table id="drip-table">
-            <thead>
-                <tr id="table-headers">
-                    <th>Blood Glucose ROW (mg/dl)</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-
-    <script src="data.js?v=1.1"></script>
-    <script src="calculator.js?v=1.1"></script>
+    <script src="game.js"></script>
 </body>
 </html>
